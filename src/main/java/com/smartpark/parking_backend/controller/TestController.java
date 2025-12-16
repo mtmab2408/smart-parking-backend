@@ -4,10 +4,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-public class HelloController {
+public class TestController {
 
     @GetMapping("/hello")
     public String sayHello() {
-        return "Hello from Smart Parking Backend!";
+        return "Spring Boot is working! You are ready for CPS2.";
     }
 }
