@@ -8,6 +8,6 @@ public class TestController {
 
     @GetMapping("/hello")
     public String sayHello() {
-        return "Spring Boot is working! You are ready for CPS2.";
+        return "FUCK ASS PROJECYT FUCK ASS FUCK FUCK FUCK DIE DIE DIE";
     }
 }
