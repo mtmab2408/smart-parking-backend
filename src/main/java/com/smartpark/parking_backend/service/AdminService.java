@@ -23,6 +23,10 @@ public class AdminService {
         return adminRepository.findAll();
     }
 
+    public void deleteAdmin(Long id){
+        adminRepository.deleteById(id);
+    }
+
     public boolean validateLogin(String username,String password){
         List<Admin> admins = adminRepository.findAll();
         for(Admin admin : admins){
