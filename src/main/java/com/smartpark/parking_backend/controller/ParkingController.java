@@ -45,6 +45,12 @@ public class ParkingController {
         return parkingService.addSlotToLot(lotId,slot);
     }
     
+    @DeleteMapping("/lots/{id}")
+    public ResponseEntity<?> deleteLot(@PathVariable Long id){
+        parkingService.deleteParkingLot(id);
+        return ResponseEntity.ok().build();
+    }
+    
     //Updating data
     @PutMapping("/slots/{id}/status")
     public ParkingSlot updateSlotStatus(@PathVariable Long id, @RequestParam boolean occupied) {

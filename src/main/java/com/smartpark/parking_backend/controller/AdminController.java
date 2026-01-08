@@ -55,6 +55,11 @@ public class AdminController {
         return ResponseEntity.ok().body("Admin deleted");
     }
 
+    @PutMapping("/{id}")
+    public Admin updateAdmin(@PathVariable Long id, @RequestBody Admin admin){
+        return adminService.updateAdmin(id, admin);
+    }
+
     
     
     

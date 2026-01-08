@@ -1,6 +1,7 @@
 package com.smartpark.parking_backend.model;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 public class ParkingSlot {
@@ -14,6 +15,7 @@ public class ParkingSlot {
 
     @ManyToOne
     @JoinColumn(name="parking_lot_id")
+    @JsonIgnoreProperties("parkingSlots")
     private ParkingLot parkingLot;
 
     // getters / setters
@@ -31,4 +33,8 @@ public class ParkingSlot {
     public void setParkingLot(ParkingLot parkingLot) {
     this.parkingLot = parkingLot;
 }
+
+    public ParkingLot getParkingLot() {
+        return parkingLot;
+    }
 }

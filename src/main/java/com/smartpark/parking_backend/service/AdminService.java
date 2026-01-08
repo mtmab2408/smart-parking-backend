@@ -19,6 +19,19 @@ public class AdminService {
         return adminRepository.save(admin);
     }
 
+    public Admin updateAdmin(Long id, Admin updatedAdmin){
+        return adminRepository.findById(id)
+            .map(existing -> {
+                existing.setUsername(updatedAdmin.getUsername());
+                // update password only if provided
+                if (updatedAdmin.getPassword() != null && !updatedAdmin.getPassword().isEmpty()) {
+                    existing.setPassword(updatedAdmin.getPassword());
+                }
+                return adminRepository.save(existing);
+            })
+            .orElseThrow(() -> new RuntimeException("Admin not found"));
+    }
+
     public List<Admin> getAllAdmins(){
         return adminRepository.findAll();
     }
