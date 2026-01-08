@@ -32,8 +32,24 @@ public class MqttMessageListener {
             Boolean isOccupied = null;
             
             System.out.println("JSON Payload: " + json.toString());
-            slotId = Long.valueOf(json.get("spot").toString());
-            isOccupied = json.getBoolean("status");
+            String spotValue = json.get("spot").toString().trim();
+            if (!spotValue.matches("\\d+")) {
+                // so we can extract digits from values like "spot1" or "spot-2"
+                //this is a problem in embedded payload, discuss with awais
+                spotValue = spotValue.replaceAll("\\D+", "");
+            }
+            if (!spotValue.isEmpty()) {
+                slotId = Long.valueOf(spotValue);
+            }
+            Object statusValue = json.get("status");
+            if (statusValue instanceof Boolean) {
+                isOccupied = (Boolean) statusValue;
+            } else if (statusValue instanceof Number) {
+                isOccupied = ((Number) statusValue).intValue() != 0;
+            } else {
+                String statusString = statusValue.toString().trim();
+                isOccupied = "1".equals(statusString) || "true".equalsIgnoreCase(statusString);
+            }
 
             System.out.println("Parsed - SlotId: " + slotId + ", IsOccupied: " + isOccupied);
 
