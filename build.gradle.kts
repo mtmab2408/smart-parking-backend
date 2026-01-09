@@ -24,8 +24,7 @@ dependencies {
 	implementation("com.hivemq:hivemq-mqtt-client:1.3.9")
 	implementation("org.json:json:20231013")
 	runtimeOnly("com.h2database:h2")
-	testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
-	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
