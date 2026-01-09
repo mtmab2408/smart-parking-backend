@@ -29,6 +29,8 @@ class MqttMessageListenerTest {
         testSlot.setOccupied(false);
         // Lenient stubs for all positive test cases
         lenient().when(parkingService.updateSlotStatus(anyLong(), anyBoolean())).thenReturn(testSlot);
+        lenient().when(parkingService.updateSlotsStatusBySensorId(anyString(), anyBoolean())).thenReturn(1);
+        lenient().when(parkingService.updateSlotStatusBySlotIdUsingSensor(anyLong(), anyBoolean())).thenReturn(1);
     }
 
     // Standard MQTT Message Tests
@@ -42,7 +44,7 @@ class MqttMessageListenerTest {
         mqttMessageListener.processMessage("parking/sensor/1", payload);
 
         // Assert: Verify service was called to update slot status to occupied
-        verify(parkingService, times(1)).updateSlotStatus(1L, true);
+        verify(parkingService, times(1)).updateSlotStatusBySlotIdUsingSensor(1L, true);
     }
 
     @Test
@@ -54,7 +56,7 @@ class MqttMessageListenerTest {
         mqttMessageListener.processMessage("parking/sensor/2", payload);
 
         // Assert: Verify slot is marked as free
-        verify(parkingService, times(1)).updateSlotStatus(2L, false);
+        verify(parkingService, times(1)).updateSlotStatusBySlotIdUsingSensor(2L, false);
     }
 
     // Numeric Status Value Tests (Embedded System Compatibility)
@@ -68,7 +70,7 @@ class MqttMessageListenerTest {
         mqttMessageListener.processMessage("parking/sensor/1", payload);
 
         // Assert: Verify numeric 1 is interpreted as occupied (true)
-        verify(parkingService, times(1)).updateSlotStatus(1L, true);
+        verify(parkingService, times(1)).updateSlotStatusBySlotIdUsingSensor(1L, true);
     }
 
     @Test
@@ -80,7 +82,7 @@ class MqttMessageListenerTest {
         mqttMessageListener.processMessage("parking/sensor/1", payload);
 
         // Assert: Verify numeric 0 is interpreted as free (false)
-        verify(parkingService, times(1)).updateSlotStatus(1L, false);
+        verify(parkingService, times(1)).updateSlotStatusBySlotIdUsingSensor(1L, false);
     }
 
     @Test
@@ -92,7 +94,7 @@ class MqttMessageListenerTest {
         mqttMessageListener.processMessage("parking/sensor/1", payload);
 
         // Assert: Verify string "1" is converted to occupied (true)
-        verify(parkingService, times(1)).updateSlotStatus(1L, true);
+        verify(parkingService, times(1)).updateSlotStatusBySlotIdUsingSensor(1L, true);
     }
 
     @Test
@@ -104,7 +106,7 @@ class MqttMessageListenerTest {
         mqttMessageListener.processMessage("parking/sensor/1", payload);
 
         // Assert: Verify string "true" is converted to occupied
-        verify(parkingService, times(1)).updateSlotStatus(1L, true);
+        verify(parkingService, times(1)).updateSlotStatusBySlotIdUsingSensor(1L, true);
     }
 
     @Test
@@ -116,7 +118,34 @@ class MqttMessageListenerTest {
         mqttMessageListener.processMessage("parking/sensor/1", payload);
 
         // Assert: Verify string "false" is converted to free status
-        verify(parkingService, times(1)).updateSlotStatus(1L, false);
+        verify(parkingService, times(1)).updateSlotStatusBySlotIdUsingSensor(1L, false);
+    }
+
+    @Test
+    void processMessage_shouldUpdateAllSlotsBySensorIdWhenProvided() {
+        // Arrange: Payload includes sensorId to update all matching slots
+        String payload = "{\"sensorId\":\"sensor-01\",\"spot\":1,\"status\":true}";
+
+        // Act: Process message with sensorId
+        mqttMessageListener.processMessage("parking/sensor/sensor-01", payload);
+
+        // Assert: Sensor ID path is used and slot-id path is skipped
+        verify(parkingService, times(1)).updateSlotsStatusBySensorId("sensor-01", true);
+        verify(parkingService, never()).updateSlotStatusBySlotIdUsingSensor(anyLong(), anyBoolean());
+    }
+
+    @Test
+    void processMessage_shouldFallbackToSlotIdWhenSensorIdHasNoMatches() {
+        // Arrange: Force sensor-id path to return zero updates
+        when(parkingService.updateSlotsStatusBySensorId("sensor-404", true)).thenReturn(0);
+        String payload = "{\"sensorId\":\"sensor-404\",\"spot\":2,\"status\":true}";
+
+        // Act: Process message with unknown sensorId
+        mqttMessageListener.processMessage("parking/sensor/sensor-404", payload);
+
+        // Assert: Falls back to slot-id update
+        verify(parkingService, times(1)).updateSlotsStatusBySensorId("sensor-404", true);
+        verify(parkingService, times(1)).updateSlotStatusBySlotIdUsingSensor(2L, true);
     }
 
     // Embedded System Payload Format Tests

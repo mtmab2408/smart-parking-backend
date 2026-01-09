@@ -30,8 +30,18 @@ public class MqttMessageListener {
 
             Long slotId = null;
             Boolean isOccupied = null;
+            String sensorId = null;
             
             System.out.println("JSON Payload: " + json.toString());
+            if (json.has("sensorId")) {
+                sensorId = json.get("sensorId").toString().trim();
+                if (sensorId.isEmpty()) {
+                    sensorId = null;
+                }
+            }
+            if (sensorId == null) {
+                sensorId = extractSensorIdFromTopic(topic);
+            }
             String spotValue = json.get("spot").toString().trim();
             if (!spotValue.matches("\\d+")) {
                 // so we can extract digits from values like "spot1" or "spot-2"
@@ -51,19 +61,27 @@ public class MqttMessageListener {
                 isOccupied = "1".equals(statusString) || "true".equalsIgnoreCase(statusString);
             }
 
-            System.out.println("Parsed - SlotId: " + slotId + ", IsOccupied: " + isOccupied);
+            System.out.println("Parsed - SensorId: " + sensorId + ", SlotId: " + slotId + ", IsOccupied: " + isOccupied);
 
-            if (slotId != null && isOccupied != null) {
-                parkingService.updateSlotStatus(slotId, isOccupied);
-                String statusString;
-                if (isOccupied) {
-                    statusString = "OCCUPIED";
-                } else {
-                    statusString = "FREE";
+            if (isOccupied != null) {
+                if (sensorId != null) {
+                    int updatedCount = parkingService.updateSlotsStatusBySensorId(sensorId, isOccupied);
+                    if (updatedCount > 0) {
+                        String statusString = isOccupied ? "OCCUPIED" : "FREE";
+                        System.out.println("SUCCESS: Updated " + updatedCount + " slot(s) for sensor " + sensorId + " to " + statusString);
+                        return;
+                    }
                 }
-                System.out.println("SUCCESS: Updated slot " + slotId + " to " + statusString);
+                if (slotId != null) {
+                    int updatedCount = parkingService.updateSlotStatusBySlotIdUsingSensor(slotId, isOccupied);
+                    String statusString = isOccupied ? "OCCUPIED" : "FREE";
+                    System.out.println("SUCCESS: Updated " + updatedCount + " slot(s) for slot " + slotId + " to " + statusString);
+                } else {
+                    System.out.println("SensorId=" + sensorId + ", SlotId=" + slotId + ", IsOccupied=" + isOccupied);
+                    System.out.println("Full JSON: " + json.toString(2));
+                }
             } else {
-                System.out.println("SlotId=" + slotId + ", IsOccupied=" + isOccupied);
+                System.out.println("SensorId=" + sensorId + ", SlotId=" + slotId + ", IsOccupied=" + isOccupied);
                 System.out.println("Full JSON: " + json.toString(2));
             }
 
@@ -72,5 +90,17 @@ public class MqttMessageListener {
             System.out.println("Error: " + e.getMessage());
             System.out.println("Raw payload (non-JSON): " + payload);
         }
+    }
+
+    private String extractSensorIdFromTopic(String topic) {
+        if (topic == null || topic.trim().isEmpty()) {
+            return null;
+        }
+        String[] parts = topic.split("/");
+        if (parts.length == 0) {
+            return null;
+        }
+        String candidate = parts[parts.length - 1].trim();
+        return candidate.isEmpty() ? null : candidate;
     }
 }

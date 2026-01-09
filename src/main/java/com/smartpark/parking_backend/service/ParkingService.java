@@ -85,5 +85,34 @@ public class ParkingService {
         return saved;
     }
 
+    public int updateSlotsStatusBySensorId(String sensorId, boolean isOccupied) {
+        if (sensorId == null || sensorId.trim().isEmpty()) {
+            return 0;
+        }
+        List<ParkingSlot> slots = parkingSlotRepository.findAllBySensorId(sensorId);
+        if (slots.isEmpty()) {
+            return 0;
+        }
+        for (ParkingSlot slot : slots) {
+            slot.setOccupied(isOccupied);
+        }
+        parkingSlotRepository.saveAll(slots);
+        slotWebSocketPublisher.broadcastSlots(getAllSlots());
+        return slots.size();
+    }
+
+    public int updateSlotStatusBySlotIdUsingSensor(Long slotId, boolean isOccupied) {
+        ParkingSlot slot = parkingSlotRepository.findById(slotId)
+            .orElseThrow(() -> new RuntimeException("Slot not Found"));
+        String sensorId = slot.getSensorId();
+        if (sensorId != null && !sensorId.trim().isEmpty()) {
+            return updateSlotsStatusBySensorId(sensorId, isOccupied);
+        }
+        slot.setOccupied(isOccupied);
+        parkingSlotRepository.save(slot);
+        slotWebSocketPublisher.broadcastSlots(getAllSlots());
+        return 1;
+    }
+
       
 }
