@@ -4,6 +4,7 @@ import com.smartpark.parking_backend.model.ParkingLot;
 import com.smartpark.parking_backend.model.ParkingSlot;
 import com.smartpark.parking_backend.repository.ParkingLotRepository;
 import com.smartpark.parking_backend.repository.ParkingSlotRepository;
+import com.smartpark.parking_backend.websocket.SlotWebSocketPublisher;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,10 +15,16 @@ public class ParkingService {
 
     private final ParkingSlotRepository parkingSlotRepository;
     private final ParkingLotRepository parkingLotRepository;
+    private final SlotWebSocketPublisher slotWebSocketPublisher;
 
-    public ParkingService(ParkingSlotRepository parkingSlotRepository, ParkingLotRepository parkingLotRepository){
+    public ParkingService(
+        ParkingSlotRepository parkingSlotRepository,
+        ParkingLotRepository parkingLotRepository,
+        SlotWebSocketPublisher slotWebSocketPublisher
+    ){
         this.parkingLotRepository =parkingLotRepository;
         this.parkingSlotRepository =parkingSlotRepository;
+        this.slotWebSocketPublisher = slotWebSocketPublisher;
     }
 
 
@@ -30,6 +37,7 @@ public class ParkingService {
     }
     public void deleteParkingLot(Long id){
         parkingLotRepository.deleteById(id);
+        slotWebSocketPublisher.broadcastSlots(getAllSlots());
     }
 
     //slot management services
@@ -41,12 +49,15 @@ public class ParkingService {
     public ParkingSlot addSlotToLot(long lotId, ParkingSlot slot){
         ParkingLot lot = parkingLotRepository.findById(lotId).orElseThrow(() -> new RuntimeException("Lot not found"));
         slot.setParkingLot(lot);
-        return parkingSlotRepository.save(slot);
+        ParkingSlot saved = parkingSlotRepository.save(slot);
+        slotWebSocketPublisher.broadcastSlots(getAllSlots());
+        return saved;
 
     }
 
     public void deleteSlot(Long SlotId){
         parkingSlotRepository.deleteById(SlotId);
+        slotWebSocketPublisher.broadcastSlots(getAllSlots());
     }
 
     public ParkingSlot updateSLotDetails(Long slotId, ParkingSlot newDetails){
@@ -54,7 +65,9 @@ public class ParkingService {
         .map(existingSlot->{
             existingSlot.setSlotNumber(newDetails.getSlotNumber());
             existingSlot.setSensorId(newDetails.getSensorId());
-            return parkingSlotRepository.save(existingSlot);
+            ParkingSlot saved = parkingSlotRepository.save(existingSlot);
+            slotWebSocketPublisher.broadcastSlots(getAllSlots());
+            return saved;
         })
         .orElseThrow(()->new RuntimeException("Slot not found"));
     }
@@ -67,7 +80,9 @@ public class ParkingService {
     public ParkingSlot updateSlotStatus(Long slotId,boolean isOccupied){
         ParkingSlot slot = parkingSlotRepository.findById(slotId).orElseThrow(() -> new RuntimeException("Slot not Found"));
         slot.setOccupied(isOccupied);
-        return parkingSlotRepository.save(slot);
+        ParkingSlot saved = parkingSlotRepository.save(slot);
+        slotWebSocketPublisher.broadcastSlots(getAllSlots());
+        return saved;
     }
 
       

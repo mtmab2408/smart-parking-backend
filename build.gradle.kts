@@ -21,6 +21,7 @@ repositories {
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springframework.boot:spring-boot-starter-web")
+	implementation("org.springframework.boot:spring-boot-starter-websocket")
 	implementation("com.hivemq:hivemq-mqtt-client:1.3.9")
 	implementation("org.json:json:20231013")
 	runtimeOnly("com.h2database:h2")
